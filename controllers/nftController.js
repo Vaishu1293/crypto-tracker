@@ -3,12 +3,14 @@ import Web3 from 'web3';
 import axios from 'axios';
 import fetch from 'node-fetch';
 import NFTModel from '../models/NFT.js';
+import TransactionModel from '../models/transactionModel.js';
 import abi from './MyNFT-abi.json' assert { type: 'json' };
 
 // Connect to Ethereum node through Infura or Alchemy
 const web3 = new Web3(new Web3.providers.HttpProvider(process.env.INFURA_URL));
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 
+// Controller function to fetch and pass the transactions to the schema for parsing and saving
 const getTransactions = async (req, res) => {
   const address = req.params.address;
   
@@ -16,14 +18,51 @@ const getTransactions = async (req, res) => {
 
   try {
     const response = await axios.get(url);
+
     if (response.data.status === '1') {
-      return res.json(response.data.result); // Send the result to the client
+      // Pass the response data to the Mongoose static method for parsing and saving
+      const savedTransactions = await TransactionModel.parseAndCreate(response.data.result, address);
+
+      // Return the saved transactions as a response (optional)
+      res.json(savedTransactions);
+      
     } else {
       return res.status(404).json({ message: 'No transactions found' });
     }
   } catch (error) {
     console.error('Error:', error);
     return res.status(500).json({ message: 'Error fetching transactions', error: error.message });
+  }
+};
+
+const queryTransactions = async (req, res) => {
+  const {startDate, endDate} = req.query; 
+  const startTimestamp = Math.floor(new Date(startDate).getTime() / 1000);
+  const endTimestamp = Math.floor(new Date(endDate).getTime() / 1000);
+
+  console.log("startTimestamp:", startTimestamp);  // Log start timestamp
+  console.log("endTimestamp:", endTimestamp);      // Log end timestamp
+
+  try {
+    const transactions = await TransactionModel.find({
+      // from: "0x2eb8C9eA053f159211Ac1c603c91492322596F44",
+      timeStamp: { $gte: startTimestamp, $lte: endTimestamp }
+    });
+
+    // const transactions = await TransactionModel.find({
+    //   // from: "0x2eb8C9eA053f159211Ac1c603c91492322596F44", // The address you're querying for
+    //   timeStamp: { $gte: 172771500, $lte: 1727716600 } // Replace with correct timestamps
+    // });
+    
+    if (!transactions.length) {
+      return res.status(404).json({ message: 'No transactions found for the specified address and date range' });
+    }
+
+    res.json(transactions);
+
+  } catch (error) {
+    console.error('Error querying transactions:', error);
+    return res.status(500).json({ message: 'Error querying transactions', error: error.message });
   }
 };
 
@@ -103,12 +142,14 @@ const fetchABIAndMetadata = async (req, res) => {
 // Export the function (named export)
 export { 
   fetchABIAndMetadata,
-  getTransactions
+  getTransactions,
+  queryTransactions
  };
 // If you need to export default:
 const nftController = { 
   fetchABIAndMetadata,
-  getTransactions
+  getTransactions,
+  queryTransactions
  };
 
 export default nftController;

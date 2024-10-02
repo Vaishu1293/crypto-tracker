@@ -1,5 +1,5 @@
 import express from 'express';
-import { fetchABIAndMetadata, getTransactions } from '../controllers/nftController.js'; // Import your controller function
+import { fetchABIAndMetadata, getTransactions, queryTransactions } from '../controllers/nftController.js'; // Import your controller function
 
 const router = express.Router(); // Create a router
 
@@ -8,6 +8,8 @@ router.get('/generate', fetchABIAndMetadata);
 
 // Route to get transactions by address
 router.get('/transactions/:address', getTransactions); // Use the controller
+
+router.get('/query', queryTransactions);
 
 
 // Export the router, not an object
