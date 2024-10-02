@@ -48,11 +48,6 @@ const queryTransactions = async (req, res) => {
       // from: "0x2eb8C9eA053f159211Ac1c603c91492322596F44",
       timeStamp: { $gte: startTimestamp, $lte: endTimestamp }
     });
-
-    // const transactions = await TransactionModel.find({
-    //   // from: "0x2eb8C9eA053f159211Ac1c603c91492322596F44", // The address you're querying for
-    //   timeStamp: { $gte: 172771500, $lte: 1727716600 } // Replace with correct timestamps
-    // });
     
     if (!transactions.length) {
       return res.status(404).json({ message: 'No transactions found for the specified address and date range' });
@@ -66,7 +61,6 @@ const queryTransactions = async (req, res) => {
   }
 };
 
-// Generate a random Ethereum address (for testing)
 // Function to generate a random Ethereum-like contract address with mixed-case
 const generateRandomContractAddress = () => {
   const hexChars = 'abcdef0123456789ABCDEF'; // Include uppercase letters for mixed-case
